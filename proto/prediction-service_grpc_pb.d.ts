@@ -4,7 +4,7 @@
 /* tslint:disable */
 /* eslint-disable */
 
-import * as grpc from "grpc";
+import * as grpc from "@grpc/grpc-js";
 import * as prediction_service_pb from "./prediction-service_pb";
 
 interface IPapayaServiceService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {

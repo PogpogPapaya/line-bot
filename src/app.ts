@@ -3,11 +3,11 @@ import dotenv from 'dotenv'
 import axios from 'axios'
 import fs from 'fs'
 import sharp from 'sharp'
+import { credentials } from '@grpc/grpc-js'
 import { nanoid } from 'nanoid'
 import { Client, middleware, MiddlewareConfig, WebhookEvent, ImageMessage } from '@line/bot-sdk'
-import grpc from '@grpc/grpc-js'
-import protoLoader from '@grpc/proto-loader'
-const PROTO_PATH = __dirname + '../proto/prediction-service.proto'
+import { PapayaServiceClient } from '../proto/prediction-service_grpc_pb'
+import { PredictionRequest, PredictionResponse } from '../proto/prediction-service_pb'
 dotenv.config()
 
 const app = express()
@@ -26,18 +26,7 @@ const middlewareConfig: MiddlewareConfig = {
     channelSecret: process.env.CHANNEL_SECRET,
 };
 
-const packageDefinition = protoLoader.loadSync(
-    PROTO_PATH,
-    {keepCase: true,
-     longs: String,
-     enums: String,
-     defaults: true,
-     oneofs: true
-    });
-const routeguide = grpc.loadPackageDefinition(packageDefinition).papaya
-const grpcClient = new routeguide.PredictionService('localhost:50051', grpc.credentials.createInsecure())
-
-
+const grpcClient = new PapayaServiceClient('localhost:8000', credentials.createInsecure())
 
 app.get('/ping', (req, res) => {
     res.send({
@@ -69,17 +58,30 @@ app.post('/webhook', middleware(middlewareConfig), async (req, res) => {
                 const processedImgPath = nanoid() + '.jpg'
                 const writer = fs.createWriteStream(imgPath)
                 res.data.pipe(writer)
-
                 await new Promise((resolve, reject) => {
                     writer.on('finish', resolve)
                     writer.on('error', reject)
                 })
-                await sharp(imgPath).resize(150, 150).toFile(processedImgPath)
-                // const pipeline = sharp().resize(150, 150).pipe(res.data.pipe())
-                client.replyMessage(event.replyToken, {
-                    type: 'text',
-                    text: 'Got an image'
+                const imgBuff = await sharp(imgPath).resize(150, 150).toBuffer()
+            
+                // Get prediction by grpc
+                const predictionRequest = new PredictionRequest()
+                predictionRequest.setImage(imgBuff.toString('base64'))
+                grpcClient.predict(predictionRequest, (err, predictionResponse: PredictionResponse) => {
+                    if (err) {
+                        console.error(err)
+                    } else {
+                        console.log(predictionResponse.getLabel());
+                        console.log(predictionResponse.getConfidence());
+                    }
+                    
+                    client.replyMessage(event.replyToken, {
+                        type: 'text',
+                        text: 'Got an image'
+                    })
                 })
+
+                
             }
         }
     }
