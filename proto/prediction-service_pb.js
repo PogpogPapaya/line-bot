@@ -1,4 +1,4 @@
-// source: proto/prediction-service.proto
+// source: prediction-service.proto
 /**
  * @fileoverview
  * @enhanceable
