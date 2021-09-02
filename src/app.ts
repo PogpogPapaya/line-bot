@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import axios from 'axios'
 import fs from 'fs'
 import sharp from 'sharp'
+import { nanoid } from 'nanoid'
 import { Client, middleware, MiddlewareConfig, WebhookEvent, ImageMessage } from '@line/bot-sdk'
 dotenv.config()
 
@@ -46,11 +47,18 @@ app.post('/webhook', middleware(middlewareConfig), async (req, res) => {
                     headers: {
                         Authorization: `Bearer ${process.env.CHANNEL_ACCESS_TOKEN}`
                     },
+                    responseType: 'stream'
                 })
-                const imageBinaryData = res.data
-                const imageBinaryBuffer = Buffer.from(imageBinaryData, 'binary')
-                fs.writeFileSync(`image.jpg`, imageBinaryBuffer)
-                await sharp('image.jpg').resize(150, 150).png().toFile('img.png')
+                const imgPath = nanoid() + '.jpg'
+                const processedImgPath = nanoid() + '.jpg'
+                const writer = fs.createWriteStream(imgPath)
+                res.data.pipe(writer)
+
+                await new Promise((resolve, reject) => {
+                    writer.on('finish', resolve)
+                    writer.on('error', reject)
+                })
+                await sharp(imgPath).resize(150, 150).toFile(processedImgPath)
                 client.replyMessage(event.replyToken, {
                     type: 'text',
                     text: 'Got an image'
