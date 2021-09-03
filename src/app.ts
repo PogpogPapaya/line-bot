@@ -18,10 +18,10 @@ const app = express()
 if (
 	!process.env.CHANNEL_ACCESS_TOKEN ||
 	!process.env.CHANNEL_SECRET ||
-	!process.env.PREDICTION_API_URL
+	!process.env.BACKEND_API_URL
 ) {
 	throw new Error(
-		"Specify PREDICTION_API_URL, CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in environment"
+		"Specify BACKEND_API_URL, CHANNEL_ACCESS_TOKEN and CHANNEL_SECRET in environment"
 	)
 }
 
@@ -81,7 +81,7 @@ app.post("/line/webhook", middleware(middlewareConfig), async (req, res) => {
 				formData.append("image", fs.createReadStream(processedImgPath))
 				try {
 					const { data: prediction } = await axios.post(
-						`${process.env.PREDICTION_API_URL}/api/papaya/predict`,
+						`${process.env.BACKEND_API_URL}/api/papaya/predict`,
 						formData,
 						{
 							headers: { ...formData.getHeaders() }
