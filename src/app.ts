@@ -44,7 +44,7 @@ app.get("/ping", (req, res) => {
 	})
 })
 
-app.post("/webhook", middleware(middlewareConfig), async (req, res) => {
+app.post("/line/webhook", middleware(middlewareConfig), async (req, res) => {
 	const events: WebhookEvent[] = req.body.events
 
 	for (const event of events) {
