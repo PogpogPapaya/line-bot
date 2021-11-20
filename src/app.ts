@@ -107,7 +107,7 @@ app.post("/line/webhook", middleware(middlewareConfig), async (req, res) => {
 })
 
 const getMsg = (label: string, confidence: number): string => {
-	const roundedConfidence = Math.round(confidence)
+	const roundedConfidence = Math.round(confidence*100)/100
 	const template: string[] = [
 		`Papaya is ${label} with ${roundedConfidence} confidentiality`,
 		`I'm ${roundedConfidence * 100}% sure that this papaya is ${label}`
